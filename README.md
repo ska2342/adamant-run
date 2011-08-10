@@ -17,6 +17,11 @@ defaults of `adamant-run`:
 
 ... more documentation to be written as soon as the API stabilizes. 
 
+## Inspiration
+
+The whole idea for this project comes from [Robert
+Bruce](https://github.com/joegallo/robert-bruce) written by Joe
+Gallo.  So, kudos to Joe for his nice interface!
 
 ## License
 
