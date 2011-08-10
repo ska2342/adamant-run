@@ -39,7 +39,6 @@
             microsleep (long (/ timeout 10))]
         ;; loop a few times waiting for the future to finish
         (loop [timeout-iter 10]
-          ;;(println "Looping" tries-left timeout-iter microsleep )
           (Thread/sleep microsleep)
 
           (cond
@@ -74,8 +73,7 @@
           ;; repeat
           (arun-make-fn callee timeout 
                         (dec tries-left)
-                        interval
-                        ;;(calc-next-interval interval decay)
+                        (calc-next-interval interval decay)
                         decay
                         exceptions)
           ;; this is another exception; pass it up the stack
@@ -119,6 +117,7 @@ RuntimeException will be raised.
                           decay      identity
                           exceptions [Exception]}}]
 
-     (trampoline (arun-make-fn #(apply f args-to-f)
-                               timeout (dec tries) interval decay exceptions))))
+     (trampoline
+      (arun-make-fn #(apply f args-to-f)
+                    timeout (dec tries) interval decay exceptions))))
 

@@ -6,14 +6,14 @@
            [java.io FileReader File FileNotFoundException]))
 
 
-
+;;; basic tests
 (deftest no-options-all-ok
   (is (= "OK" (adamant-run (fn [] "OK"))) "Just constant string")
   (is (= 23   (adamant-run #(+ 20 3)))    "Anon fn with addition")
   (is (= 3    (adamant-run + [1 2]))      "+ with additional args"))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; testing timeout handling
+
+;;; testing timeout handling
 (defn test-timeout [millis]
   (Thread/sleep (* 2 millis))
   millis)
@@ -42,11 +42,9 @@
          (adamant-run get-15-webpage-chars []
                       :tries 2 :timeout 10000))
       "sleep but wait long enough"))
-  
-      
 
 
-;; testing the exception handling
+;;; testing the exception handling
 (defn test-arith-exception []
   (throw (new ArithmeticException "Just a test")))
 
@@ -75,6 +73,4 @@
        (adamant-run #(FileReader. (File. "./file/not/found"))
         []
         :exceptions [ArithmeticException]))
-      "trying to catch ArithEx but get concurrent.ExecEx")
-  
-  )
+      "trying to catch ArithEx but get concurrent.ExecEx"))
