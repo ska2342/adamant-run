@@ -36,12 +36,16 @@
   (is (thrown-with-msg?
         RuntimeException #"tries exceeded"
         (adamant-run get-15-webpage-chars []
-                     :tries 2 :timeout 10)))
+                     :tries 1 :timeout 1))
+      "get a webpage too fast)
 
-  (is (= "<!DOCTYPE html "
-         (adamant-run get-15-webpage-chars []
-                      :tries 2 :timeout 10000))
-      "sleep but wait long enough"))
+  ;; this is probably a bad idea since the test relies on a working internet
+  ;; connection 
+  ;; (is (= "<!DOCTYPE html "
+  ;;        (adamant-run get-15-webpage-chars []
+  ;;                     :tries 2 :timeout 10000))
+  ;;     "sleep but wait long enough")
+  )
 
 
 ;;; testing the exception handling
