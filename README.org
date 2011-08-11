@@ -1,0 +1,40 @@
+* adamant-run
+
+A Clojure library to adamantly (or stubbornly) try to run a function.
+
+** Motivation
+
+This library shall help you run functions which may encounter errors
+or timeout with automated retries.  Situations where this might be
+helpful contain communication with a remote service, which may be
+unavailable, or dealing with asynchronous file transfer, when you are
+waiting for a file to show up.
+
+** Usage
+
+You can pass any clojure function to `adamant-run` along with its
+arguments and some finetuning options to control how adamant-run will
+run your function.
+
+The easiest case is calling a function with no arguments using the
+defaults of `adamant-run`:
+
+
+#+BEGIN_SRC clojure
+ (adamant-run (fn [] "OK"))
+#+END_SRC
+
+The documentation of the function adamant-run contains a list of
+keyword options.
+
+** Inspiration
+
+The whole idea for this project comes from [[https://github.com/joegallo/robert-bruce][Robert Bruce]] written by Joe
+Gallo. So, kudos to Joe for his nice interface!
+
+** License
+
+Copyright (C) 2011 Stefan Kamphausen
+
+Distributed under the Eclipse Public License, the same as Clojure.
+See file COPYING.
