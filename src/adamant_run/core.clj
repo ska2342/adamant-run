@@ -20,19 +20,18 @@
    ;; FIXME should never come here.  Graceful or Exception?
    :else intervall))
 
+(defn- arun-make-fn
+  "Private function.
 
-   
-;; create future object running the CALLEE
-;; keep asking the future object whether it's done
-;; if TIMEOUT exceeded or one of EXCEPTIONS catched
-;; sleep for INTERVAL and return new closure with
-;;    TRIES-LEFT dec'ed
-;;    INTERVAL calculated by SLEEP-ADJUST function
-;;    
-;;  
-(defn arun-make-fn [callee timeout tries-left interval
-                    sleep-adjust exceptions]
-  ;;(println "make fn" [callee timeout tries-left interval sleep-adjust exceptions])
+* create future object running the CALLEE
+* keep asking the future object whether it's done
+* if TIMEOUT exceeded or one of EXCEPTIONS caught
+  * cancel future
+  * sleep for INTERVAL and return new closure with
+    * TRIES-LEFT dec'ed
+    * INTERVAL calculated by SLEEP-ADJUST function"
+
+  [callee timeout tries-left interval sleep-adjust exceptions]
 
   (fn []
     ;; testing whether we will try again one more time.
@@ -98,10 +97,10 @@ This function can be used to easily retry a function which is expected
 to fail with known exceptions or a timeout.
 
 Options can be [defaults in square brackets]:
- :timeout      [1000] miliseconds to wait for the function to finish
+ :timeout      [1000] milliseconds to wait for the function to finish
                on another thread 
  :tries        [5] max number of tries
- :interval     [1000] wait interval between tries in miliseconds
+ :interval     [1000] wait interval between tries in milliseconds
  :sleep-adjust [identity] symbol or function for a more dynamic
                interval
                Must be either a function of one argument (current
