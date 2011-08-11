@@ -2,17 +2,21 @@
   (:import adamant_run.AdamantRetryException)
   (:import java.lang.RuntimeException))
 
-;; handling decay of sleep time between successive tries
-(defn- calc-next-interval [intervall decay]
+;; handling adjustment of sleep time between successive tries
+(defn- calc-next-interval [intervall sleep-adjust]
   (cond
-   ;; decay may be a user-supplied function accepting one arg (default identiy)
-   (fn? decay) (decay intervall)
+   ;; sleep-adjust may be a user-supplied function accepting one arg (default
+   ;; identiy)
+   (fn? sleep-adjust) (sleep-adjust intervall)
 
    ;; the interface also allows a whitelist of keywords representing some common
    ;; schemes
-   (= decay :exponential) (* Math/E intervall)
-   (= decay :double) (* 2 intervall)
-   
+   (= sleep-adjust :exponential) (* Math/E intervall)
+   (= sleep-adjust :double) (* 2 intervall)
+
+   ;; if it is a numer, treat it as a multiplicator
+   (integer? sleep-adjust) (* sleep-adjust intervall)
+
    ;; FIXME should never come here.  Graceful or Exception?
    :else intervall))
 
@@ -23,11 +27,12 @@
 ;; if TIMEOUT exceeded or one of EXCEPTIONS catched
 ;; sleep for INTERVAL and return new closure with
 ;;    TRIES-LEFT dec'ed
-;;    INTERVAL calculated by DECAY function
+;;    INTERVAL calculated by SLEEP-ADJUST function
 ;;    
 ;;  
-(defn arun-make-fn [callee timeout tries-left interval decay exceptions]
-  ;;(println "make fn" [callee timeout tries-left interval decay exceptions])
+(defn arun-make-fn [callee timeout tries-left interval
+                    sleep-adjust exceptions]
+  ;;(println "make fn" [callee timeout tries-left interval sleep-adjust exceptions])
 
   (fn []
     ;; testing whether we will try again one more time.
@@ -48,8 +53,8 @@
             (do
               (let [ret (deref fu)]
                 (if (fn? ret)
-                  (throw
-                   (RuntimeException. "Adamant function: return value is fn"))
+                  (throw (AssertionError.
+                          "Adamant function: return value is fn"))
                   ret)))
 
            ;; we reached the maximum iterations waiting for the future
@@ -73,13 +78,15 @@
           ;; repeat
           (arun-make-fn callee timeout 
                         (dec tries-left)
-                        (calc-next-interval interval decay)
-                        decay
+                        (calc-next-interval interval sleep-adjust)
+                        sleep-adjust
                         exceptions)
           ;; this is another exception; pass it up the stack
-          ;; use .getCause because we always get a concurrent Execution
-          ;; exception
-          (throw (.getCause t)))))))
+          ;; usually .getCause will be called, because we get a concurrent
+          ;; Execution exception; just the case of returning a fn, which leads
+          ;; to an Error being thrown will be passed as-is.
+          (throw (or (.getCause t)
+                     t)))))))
   
 
 
@@ -90,18 +97,24 @@ This function can be used to easily retry a function which is expected
 to fail with known exceptions or a timeout.
 
 Options can be [defaults in square brackets]:
- :timeout    [1000] miliseconds to wait for the function to finish on
-             another thread 
- :tries      [5] max number of tries
- :interval   [1000] wait interval between tries in miliseconds
- :decay      [identity] symbol or function for a more dynamic interval
-             Must be either a function of one argument (current
-             interval) returning the new interval or one of the
-             allowed symbols
-             :double
-             :exponential
- :exceptions [[Exception]] vector of expected exeptions to catch.  All
-             other exceptions will be passed through.
+ :timeout      [1000] miliseconds to wait for the function to finish
+               on another thread 
+ :tries        [5] max number of tries
+ :interval     [1000] wait interval between tries in miliseconds
+ :sleep-adjust [identity] symbol or function for a more dynamic
+               interval
+               Must be either a function of one argument (current
+               interval) returning the new interval, a number by which
+               the sleep time will be multiplied for each try or one of
+               the allowed symbols
+               :double
+               :exponential
+ :exceptions   [[Exception]] vector of expected exeptions to catch.
+               All other exceptions will be passed through.
+
+Note, that F *must not* return a function.  The reason is, that
+under the hoods trampoline is used which has the same restriction.
+If you try to return a function, an AssertionError will be raised.
 
 If the return value of the function can't be calculated a
 RuntimeException will be raised.
@@ -110,14 +123,15 @@ RuntimeException will be raised.
   ([f]
      (adamant-run f []))
 
-  ([f args-to-f & {:keys [timeout tries interval decay exceptions]
-                   :or   {timeout    1000
-                          tries      5
-                          interval   1000
-                          decay      identity
-                          exceptions [Exception]}}]
+  ([f args-to-f & {:keys [timeout tries interval sleep-adjust exceptions]
+                   :or   {timeout      1000
+                          tries        5
+                          interval     1000
+                          sleep-adjust identity
+                          exceptions   [Exception]}}]
 
      (trampoline
       (arun-make-fn #(apply f args-to-f)
-                    timeout (dec tries) interval decay exceptions))))
+                    timeout (dec tries) interval sleep-adjust
+                    exceptions))))
 

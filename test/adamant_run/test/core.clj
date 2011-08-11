@@ -74,3 +74,11 @@
         []
         :exceptions [ArithmeticException]))
       "trying to catch ArithEx but get concurrent.ExecEx"))
+
+(defn return-a-fn []
+  #(str "I am a fn"))
+
+(deftest return-function
+  (is (thrown? AssertionError 
+               (adamant-run return-a-fn))
+      "function returns a function leads to AssertionError"))
