@@ -68,25 +68,24 @@
            (recur (dec timeout-iter)))))
 
       ;; now catch either the user-supplied exceptions or our own signal for a
-      ;; retry
+      ;; retry and handle other situations
+      ;; FIXME: want to allow catching Errors as well or pass them up in any
+      ;; case? 
       (catch Throwable t
-        ;; one of the expected exceptions
-        (if (some #(or (isa? (type (.getCause t)) %)
-                       (isa? (type t) %))
-                  (conj exceptions AdamantRetryException))
-          ;; this is a retry, so return a fn back to trampoline which will
-          ;; repeat
+        (cond
+          ;; our own retry ex or one of the expected exceptions
+          (or (= (class t) AdamantRetryException)
+              (some #(isa? (class (.getCause t)) %) exceptions))
           (arun-make-fn callee timeout 
                         (dec tries-left)
                         (calc-next-interval interval sleep-adjust)
-                        sleep-adjust
-                        exceptions)
-          ;; this is another exception; pass it up the stack
-          ;; usually .getCause will be called, because we get a concurrent
-          ;; Execution exception; just the case of returning a fn, which leads
-          ;; to an Error being thrown will be passed as-is.
-          (throw (or (.getCause t)
-                     t)))))))
+                        sleep-adjust exceptions)
+          ;; if it's an error, we need to throw it as is
+          (isa? (class t) Error) (throw t)
+          ;; else we encountered some other exception which we will just pass up
+          ;; the stack.  Calling .getCause because the exception from the callee
+          ;; was wrapped by the future
+          :else (throw (.getCause t)))))))
   
 
 
