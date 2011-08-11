@@ -37,7 +37,7 @@
         RuntimeException #"tries exceeded"
         (adamant-run get-15-webpage-chars []
                      :tries 1 :timeout 1))
-      "get a webpage too fast)
+      "get a webpage too fast")
 
   ;; this is probably a bad idea since the test relies on a working internet
   ;; connection 
