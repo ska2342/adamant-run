@@ -60,7 +60,9 @@
            ;; we reached the maximum iterations waiting for the future
            (= 0 timeout-iter)
            ;; use our own exception to signal a retry
-           (throw (AdamantRetryException. "Adamant function: timed out"))
+           (do
+             (future-cancel fu)
+             (throw (AdamantRetryException. "Adamant function: timed out")))
 
            ;; nothing happened yet, so we try again to see whether the future
            ;; finished in the meantime

@@ -79,6 +79,7 @@
         :exceptions [ArithmeticException]))
       "trying to catch ArithEx but get concurrent.ExecEx"))
 
+;; must not return a function
 (defn return-a-fn []
   #(str "I am a fn"))
 
@@ -86,3 +87,22 @@
   (is (thrown? AssertionError 
                (adamant-run return-a-fn))
       "function returns a function leads to AssertionError"))
+
+;; testing whether futures are canceled or performed for side effects 
+(def side-effect (atom 0))
+(defn slow-side-effecter [slp]
+  (Thread/sleep slp)
+  (swap! side-effect inc))
+
+(deftest side-effects
+  (is (thrown-with-msg?
+        RuntimeException #"tries exceeded"
+        (adamant-run slow-side-effecter [100] :timeout 10))
+      "calling too slow, must be canceled")
+  (is (= 0 (deref side-effect))
+      "testing no side effect occured")
+
+  (is (= 1 (adamant-run slow-side-effecter [10] :timeout 100))
+      "calling fast enough function, must have side effect")
+  (is (=  (deref side-effect))
+      "testing side effect occured"))
