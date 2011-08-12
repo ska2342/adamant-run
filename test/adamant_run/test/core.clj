@@ -101,7 +101,7 @@
       "calling too slow, must be canceled")
   (is (= 0 (deref side-effect))
       "testing no side effect occured")
-
+  (swap! side-effect (constantly 0))
   (is (= 1 (adamant-run slow-side-effecter [10] :timeout 100))
       "calling fast enough function, must have side effect")
   (is (=  (deref side-effect))
